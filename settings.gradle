@@ -1,1 +1,1 @@
-include ':samples:SpeechReco'
+include ':App-IGO:SpeechReco'

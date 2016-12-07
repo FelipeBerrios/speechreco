@@ -42,9 +42,15 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RadioGroup;
-import android.media.AudioFormat;
-import android.media.AudioRecord;
-import android.media.MediaRecorder;
+import android.widget.ListView;
+import android.speech.tts.TextToSpeech;
+
+import android.app.Activity;
+import android.database.DataSetObserver;
+import android.os.Bundle;
+import android.view.KeyEvent;
+import android.view.View;
+import android.widget.AbsListView;
 
 import com.microsoft.bing.speech.SpeechClientStatus;
 import com.microsoft.cognitiveservices.speechrecognition.DataRecognitionClient;
@@ -56,12 +62,21 @@ import com.microsoft.cognitiveservices.speechrecognition.SpeechRecognitionMode;
 import com.microsoft.cognitiveservices.speechrecognition.SpeechRecognitionServiceFactory;
 import java.io.InputStream;
 import java.io.IOException;
+import java.util.Locale;
 import java.lang.Thread;
 import java.util.concurrent.TimeUnit;
 import android.os.Handler;
 import android.widget.TextView;
 
 public class MainActivity extends Activity implements ISpeechRecognitionServerEvents {
+
+    private static final String TAG = "ChatActivity";
+
+    private ChatArrayAdapter chatArrayAdapter;
+    private ListView listView;
+    private EditText chatText;
+    private Button buttonSend;
+    TextToSpeech tts;
 
     int m_waitSeconds = 0;
     DataRecognitionClient dataClient = null;
@@ -150,11 +165,70 @@ public class MainActivity extends Activity implements ISpeechRecognitionServerEv
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        this._tview = (TextView) findViewById(R.id.textView1);
-        this._logText = (EditText) findViewById(R.id.editText1);
+        tts=new TextToSpeech(MainActivity.this, new TextToSpeech.OnInitListener() {
+
+            @Override
+            public void onInit(int status) {
+                // TODO Auto-generated method stub
+                if(status == TextToSpeech.SUCCESS){
+                    int result=tts.setLanguage(new Locale("es", "ES"));
+                    if(result==TextToSpeech.LANG_MISSING_DATA ||
+                            result==TextToSpeech.LANG_NOT_SUPPORTED){
+                        Log.e("error", "This Language is not supported");
+                    }
+                    else{
+                        ConvertTextToSpeech();
+                    }
+                }
+                else
+                    Log.e("error", "Initilization Failed!");
+            }
+        });
+
+        buttonSend = (Button) findViewById(R.id.send);
+
+        listView = (ListView) findViewById(R.id.msgview);
+
+        chatArrayAdapter = new ChatArrayAdapter(getApplicationContext(), R.layout.right);
+        listView.setAdapter(chatArrayAdapter);
+
+        chatText = (EditText) findViewById(R.id.msg);
+        chatText.setOnKeyListener(new View.OnKeyListener() {
+            public boolean onKey(View v, int keyCode, KeyEvent event) {
+                if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
+                    ConvertTextToSpeech();
+                    return sendChatMessage(false, chatText.getText().toString());
+                }
+                return false;
+            }
+        });
+        buttonSend.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View arg0) {
+                ConvertTextToSpeech();
+                sendChatMessage(false, chatText.getText().toString());
+
+            }
+        });
+
+        listView.setTranscriptMode(AbsListView.TRANSCRIPT_MODE_ALWAYS_SCROLL);
+        listView.setAdapter(chatArrayAdapter);
+
+        //to scroll the list view to bottom on data change
+        chatArrayAdapter.registerDataSetObserver(new DataSetObserver() {
+            @Override
+            public void onChanged() {
+                super.onChanged();
+                listView.setSelection(chatArrayAdapter.getCount() - 1);
+            }
+        });
+
+
+        //this._logText = (EditText) findViewById(R.id.editText1);
         //this._radioGroup = (RadioGroup)findViewById(R.id.groupMode);
         //this._buttonSelectMode = (Button)findViewById(R.id.buttonSelectMode);
         this._startButton = (Button) findViewById(R.id.button1);
@@ -190,11 +264,40 @@ public class MainActivity extends Activity implements ISpeechRecognitionServerEv
             }
         });*/
 
-        this.ShowMenu(true);
+        //this.ShowMenu(true);
+    }
+
+/*    @Override
+    protected void onPause() {
+
+        if(tts != null){
+
+            tts.stop();
+            tts.shutdown();
+        }
+        super.onPause();
+    }
+*/
+    private void ConvertTextToSpeech() {
+        String speak = chatText.getText().toString();
+        // TODO Auto-generated method stub
+        tts.speak(speak, TextToSpeech.QUEUE_FLUSH, null);
+    }
+
+    private boolean sendChatMessage(boolean isMic, String mytext) {
+        if(isMic){
+            chatArrayAdapter.add(new ChatMessage(false, mytext));
+        }
+        else{
+            chatArrayAdapter.add(new ChatMessage(true, mytext));
+            chatText.setText("");
+
+        }
+        return true;
     }
 
 
-    private void ShowMenu(boolean show) {
+    /*private void ShowMenu(boolean show) {
         if (show) {
             //this._radioGroup.setVisibility(View.VISIBLE);
             this._logText.setVisibility(View.INVISIBLE);
@@ -203,7 +306,7 @@ public class MainActivity extends Activity implements ISpeechRecognitionServerEv
             this._logText.setText("");
             this._logText.setVisibility(View.VISIBLE);
         }
-    }
+    }*/
     /**
      * Handles the Click event of the _startButton control.
      */
@@ -211,9 +314,9 @@ public class MainActivity extends Activity implements ISpeechRecognitionServerEv
         this._startButton.setEnabled(false);
         //this._radioGroup.setEnabled(false);
 
-        this.m_waitSeconds = this.getMode() == SpeechRecognitionMode.ShortPhrase ? 20 : 40;
+        this.m_waitSeconds = this.getMode() == SpeechRecognitionMode.ShortPhrase ? 20 : 200;
 
-        this.ShowMenu(false);
+        //this.ShowMenu(false);
 
         this.LogRecognitionStart();
 
@@ -317,13 +420,14 @@ public class MainActivity extends Activity implements ISpeechRecognitionServerEv
         }
 
         if (!isFinalDicationMessage) {
-            this.WriteLine("********* Final n-BEST Results *********");
+            /*this.WriteLine("********* Final n-BEST Results *********");
             for (int i = 0; i < response.Results.length; i++) {
                 this.WriteLine("[" + i + "]" + " Confidence=" + response.Results[i].Confidence +
                         " Text=\"" + response.Results[i].DisplayText + "\"");
             }
 
-            this.WriteLine();
+            this.WriteLine();*/
+            sendChatMessage(true, response.Results[0].DisplayText);
         }
     }
 
@@ -356,13 +460,13 @@ public class MainActivity extends Activity implements ISpeechRecognitionServerEv
      * @param recording The current recording state
      */
     public void onAudioEvent(boolean recording) {
-        this.WriteLine("--- Microphone status change received by onAudioEvent() ---");
+        /*this.WriteLine("--- Microphone status change received by onAudioEvent() ---");
         this.WriteLine("********* Microphone status: " + recording + " *********");
         if (recording) {
             this.WriteLine("Please start speaking.");
         }
 
-        WriteLine();
+        WriteLine();*/
         if (!recording) {
             this.micClient.endMicAndRecognition();
             this._startButton.setEnabled(true);
@@ -381,7 +485,7 @@ public class MainActivity extends Activity implements ISpeechRecognitionServerEv
      * @param text The line to write.
      */
     private void WriteLine(String text) {
-        this._logText.append(text + "\n");
+        //this._logText.append(text + "\n");
     }
 
     /**
@@ -410,7 +514,7 @@ public class MainActivity extends Activity implements ISpeechRecognitionServerEv
             this.dataClient = null;
         }
 
-        this.ShowMenu(false);
+        //this.ShowMenu(false);
         this._startButton.setEnabled(true);
     }
 
