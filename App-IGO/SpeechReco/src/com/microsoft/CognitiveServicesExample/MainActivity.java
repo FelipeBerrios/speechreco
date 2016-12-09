@@ -314,7 +314,7 @@ public class MainActivity extends Activity implements ISpeechRecognitionServerEv
         this._startButton.setEnabled(false);
         //this._radioGroup.setEnabled(false);
 
-        this.m_waitSeconds = this.getMode() == SpeechRecognitionMode.ShortPhrase ? 20 : 200;
+        this.m_waitSeconds = this.getMode() == SpeechRecognitionMode.ShortPhrase ? 20 : 100;
 
         //this.ShowMenu(false);
 
@@ -406,7 +406,8 @@ public class MainActivity extends Activity implements ISpeechRecognitionServerEv
     public void onFinalResponseReceived(final RecognitionResult response) {
         boolean isFinalDicationMessage = this.getMode() == SpeechRecognitionMode.LongDictation &&
                 (response.RecognitionStatus == RecognitionStatus.EndOfDictation ||
-                        response.RecognitionStatus == RecognitionStatus.DictationEndSilenceTimeout);
+                        response.RecognitionStatus == RecognitionStatus.DictationEndSilenceTimeout ||
+                        response.RecognitionStatus == RecognitionStatus.InitialSilenceTimeout);
         if (null != this.micClient && this.getUseMicrophone() && ((this.getMode() == SpeechRecognitionMode.ShortPhrase) || isFinalDicationMessage)) {
             // we got the final result, so it we can end the mic reco.  No need to do this
             // for dataReco, since we already called endAudio() on it as soon as we were done
@@ -420,6 +421,7 @@ public class MainActivity extends Activity implements ISpeechRecognitionServerEv
         }
 
         if (!isFinalDicationMessage) {
+
             /*this.WriteLine("********* Final n-BEST Results *********");
             for (int i = 0; i < response.Results.length; i++) {
                 this.WriteLine("[" + i + "]" + " Confidence=" + response.Results[i].Confidence +
@@ -427,7 +429,13 @@ public class MainActivity extends Activity implements ISpeechRecognitionServerEv
             }
 
             this.WriteLine();*/
-            sendChatMessage(true, response.Results[0].DisplayText);
+            if(response.Results.length ==0){
+
+            }
+            else{
+                sendChatMessage(true, response.Results[0].DisplayText);
+            }
+
         }
     }
 
