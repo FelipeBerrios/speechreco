@@ -30,19 +30,26 @@
             android:id="@+id/button1"
             android:background="@drawable/btn_modes"
             android:layout_height="wrap_content"
-            android:text="Iniciar"
+            android:text="Comenzar"
             android:layout_width="wrap_content"
             android:layout_alignParentBottom="true"
             android:layout_alignParentLeft="true"
             android:layout_marginRight="20dp"
-            android:textColor="#fff"/>
+            android:padding="2.5dp"
+            android:textSize="12dp"
+            android:ems="2"
+            android:maxEms="2"
+            android:textColor="#fff"
+            android:layout_weight="0.56" />
 
         <EditText
             android:id="@+id/msg"
             android:layout_width="wrap_content"
             android:layout_height="fill_parent"
-            android:layout_weight="2.93"
+            android:layout_weight="2.3"
             android:layout_marginRight="20dp"
+            android:ems="4"
+            android:maxEms="4"
             android:paddingLeft="5dp"
             android:background="@drawable/back" />
 

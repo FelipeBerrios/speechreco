@@ -2,7 +2,8 @@
 
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:drawable="@drawable/green_color" android:state_enabled="true" android:state_focused="false" android:state_pressed="false"></item>
-    <item android:drawable="@drawable/red_color" android:state_enabled="false"></item>
+    <item android:drawable="@drawable/red_color"  android:state_enabled="false" >
+    </item>
     <item android:drawable="@drawable/green_color" android:state_focused="true" android:state_pressed="false"  >
     </item>
 

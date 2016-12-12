@@ -312,6 +312,7 @@ public class MainActivity extends Activity implements ISpeechRecognitionServerEv
      */
     private void StartButton_Click(View arg0) {
         this._startButton.setEnabled(false);
+        this._startButton.setText("Reconociendo");
         //this._radioGroup.setEnabled(false);
 
         this.m_waitSeconds = this.getMode() == SpeechRecognitionMode.ShortPhrase ? 20 : 100;
@@ -417,6 +418,7 @@ public class MainActivity extends Activity implements ISpeechRecognitionServerEv
 
         if (isFinalDicationMessage) {
             this._startButton.setEnabled(true);
+            this._startButton.setText("Comenzar");
             this.isReceivedResponse = FinalResponseStatus.OK;
         }
 
